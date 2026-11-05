@@ -7,3 +7,6 @@ requests
 
 ### LLM関連
 openai
+
+### API key管理
+python-dotenv
