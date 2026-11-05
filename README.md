@@ -27,3 +27,11 @@ RAG/
     ├── main.py
     └── ingest.py
 ```
+
+## 環境構築
+Pythonの仮想環境を構築し、必要なライブラリ群をそろえる。
+```text
+python -m venv {.venv}
+.\{.venv}\Scripts\activate
+pip install -r requirements.txt
+```

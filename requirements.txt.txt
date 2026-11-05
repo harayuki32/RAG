@@ -1,0 +1,9 @@
+### 基本データ処理
+numpy
+
+### Web　スクレイピング
+beautifulsoup4
+requests
+
+### LLM関連
+openai
