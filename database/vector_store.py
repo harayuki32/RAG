@@ -8,10 +8,10 @@ def cosine_similarity(vec1, vec2):
     norm2 = np.linalg.norm(vec2)
     return dot_product / (norm1 * norm2)
 
-def find_relevant_chunks(question, chunk_embeddings,client,top_k=2):
+def find_relevant_chunks(question, chunk_embeddings,client,embedding_model,top_k=2):
     """質問に関連するチャンクを見つける関数"""
     # 質問をベクトル化
-    question_embedding = embed_text(client,question)
+    question_embedding = embed_text(client,question,embedding_model)
 
     # 各チャンクとの類似度を計算
     similarities = []

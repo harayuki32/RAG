@@ -15,14 +15,31 @@ def rag_qa(url, question):
 
     load_dotenv(env_path)
 
-    # ★追加：OpenAIクライアントを生成
-    # ★修正：Gemini APIに接続する
-    client = OpenAI(
-        api_key=os.getenv("GEMINI_API_KEY"),
-        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-    )
+    provider = "gemini"
 
-    # client = OpenAI()
+    if provider == "gemini":
+        # ★追加：Gemini APIに接続する
+        client = OpenAI(
+            api_key=os.getenv("GEMINI_API_KEY"),
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+        )
+
+        # ★追加：Geminiで使用するモデル
+        embedding_model = "gemini-embedding-001"
+        llm_model = "gemini-3.1-flash-lite"
+
+    elif provider == "openai":
+        client = OpenAI(
+            api_key=os.getenv("OPENAI_API_KEY")
+        )
+
+        # ★追加：OpenAIで使用するモデル
+        embedding_model = "text-embedding-3-small"
+        llm_model = "gpt-4o-mini"
+
+    else:
+        raise ValueError(f"未対応のAPIです: {provider}")
+
 
 
     print("OpenAIクライアントの生成成功")
@@ -40,7 +57,7 @@ def rag_qa(url, question):
     # 3. チャンクをベクトル化
     chunk_embeddings = []
     for chunk in chunks:
-        embedding = embed_text(client,chunk)
+        embedding = embed_text(client,chunk,embedding_model)
         chunk_embeddings.append({
             "text": chunk,
             "embedding": embedding
@@ -48,11 +65,11 @@ def rag_qa(url, question):
     print("チャンクをベクトル化しました")
 
     # 4. 関連チャンクを見つける
-    relevant_chunks = find_relevant_chunks(question, chunk_embeddings,client)
+    relevant_chunks = find_relevant_chunks(question, chunk_embeddings,client,embedding_model)
     print("質問に関連するチャンクを見つけました")
 
     # 5. 回答を生成
-    answer = generate_answer(question, relevant_chunks,client)
+    answer = generate_answer(question, relevant_chunks,client,llm_model)
     print("回答を生成しました")
 
     return answer

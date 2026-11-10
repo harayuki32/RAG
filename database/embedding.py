@@ -8,11 +8,11 @@
 
 #     return response.data[0].embedding
 
-def embed_text(client, text):
+def embed_text(client, text,embedding_model):
     """テキストをベクトル化する関数"""
 
     response = client.embeddings.create(
-        model="gemini-embedding-001",  # ★修正
+        model=embedding_model,  # ★修正
         input=text
     )
 

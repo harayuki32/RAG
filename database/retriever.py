@@ -1,4 +1,4 @@
-def generate_answer(question, relevant_chunks,client):
+def generate_answer(question, relevant_chunks,client,llm_model):
     """関連チャンクをもとに回答を生成する関数"""
     # プロンプトの作成
     context = "\n\n".join([chunk["text"] for chunk in relevant_chunks])
@@ -14,7 +14,7 @@ def generate_answer(question, relevant_chunks,client):
     # GPTで回答を生成
     response = client.chat.completions.create(
         # model="gpt-4o-mini",  # 最新推奨モデル（安価で高速）
-        model="gemini-3.1-flash-lite",
+        model=llm_model,
         messages=[
             {"role": "system", "content": "あなたは与えられた情報をもとに質問に答えるアシスタントです。"},
             {"role": "user", "content": prompt}
