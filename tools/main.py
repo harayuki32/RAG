@@ -1,20 +1,32 @@
 from database.chunker import split_into_chunks
 from database.loader import get_webpage_text
 from database.embedding import embed_text
-from database.retriever import find_relevant_chunks
-from database.vector_store import generate_answer
+from database.retriever import generate_answer 
+from database.vector_store import find_relevant_chunks
 from pathlib import Path  # ★追加
 from dotenv import load_dotenv  # ★追加
 from openai import OpenAI  # ★追加
+import os
 
 def rag_qa(url, question):
 
     # ★追加：APIキーを読み込む
     env_path = Path(__file__).resolve().parent.parent / ".env"
+
     load_dotenv(env_path)
 
     # ★追加：OpenAIクライアントを生成
-    client = OpenAI()
+    # ★修正：Gemini APIに接続する
+    client = OpenAI(
+        api_key=os.getenv("GEMINI_API_KEY"),
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+    )
+
+    # client = OpenAI()
+
+
+    print("OpenAIクライアントの生成成功")
+
 
     """RAGを使った質問応答システムのメイン関数"""
     # 1. Webページからテキスト抽出
@@ -44,3 +56,13 @@ def rag_qa(url, question):
     print("回答を生成しました")
 
     return answer
+
+# ★追加：main.pyを直接実行したときだけ動作
+if __name__ == "__main__":
+
+    url = "https://example.com"
+    question = "このWebページについて教えてください"
+
+    answer = rag_qa(url, question)
+
+    print(answer)

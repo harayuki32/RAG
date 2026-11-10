@@ -1,5 +1,5 @@
 import numpy as np
-from embedding import embed_text
+from database.embedding import embed_text
 
 def cosine_similarity(vec1, vec2):
     """コサイン類似度を計算する関数"""
