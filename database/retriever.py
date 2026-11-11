@@ -1,25 +1,30 @@
-def generate_answer(question, relevant_chunks,client,llm_model):
-    """関連チャンクをもとに回答を生成する関数"""
-    # プロンプトの作成
-    context = "\n\n".join([chunk["text"] for chunk in relevant_chunks])
-    prompt = f"""以下は、Webページから抽出された情報です：
+import numpy as np
+from database.embedding import embed_text
 
-{context}
+def cosine_similarity(vec1, vec2):
+    """コサイン類似度を計算する関数"""
+    dot_product = np.dot(vec1, vec2)
+    norm1 = np.linalg.norm(vec1)
+    norm2 = np.linalg.norm(vec2)
+    return dot_product / (norm1 * norm2)
 
-上記の情報をもとに、次の質問に答えてください：
-{question}
+def find_relevant_chunks(question, chunk_embeddings,client,embedding_model,top_k=2):
+    """質問に関連するチャンクを見つける関数"""
+    # 質問をベクトル化
+    question_embedding = embed_text(client,question,embedding_model)
 
-できるだけ与えられた情報のみを使って回答してください。情報が不足している場合は、「提供された情報からは回答できません」と答えてください。"""
+    # 各チャンクとの類似度を計算
+    similarities = []
+    for i, chunk_data in enumerate(chunk_embeddings):
+        similarity = cosine_similarity(question_embedding, chunk_data["embedding"])
+        similarities.append({
+            "index": i,
+            "similarity": similarity,
+            "text": chunk_data["text"]
+        })
 
-    # GPTで回答を生成
-    response = client.chat.completions.create(
-        # model="gpt-4o-mini",  # 最新推奨モデル（安価で高速）
-        model=llm_model,
-        messages=[
-            {"role": "system", "content": "あなたは与えられた情報をもとに質問に答えるアシスタントです。"},
-            {"role": "user", "content": prompt}
-        ],
-        temperature=0.3
-    )
+    # 類似度の高い順にソート
+    similarities.sort(key=lambda x: x["similarity"], reverse=True)
 
-    return response.choices[0].message.content
+    # 上位k個を返す
+    return similarities[:top_k]

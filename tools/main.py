@@ -1,21 +1,21 @@
 from database.chunker import split_into_chunks
 from database.loader import get_webpage_text
 from database.embedding import embed_text
-from database.retriever import generate_answer 
-from database.vector_store import find_relevant_chunks
+from chat.prompt import create_prompt
+from chat.llm import generate_answer 
+from database.retriever import find_relevant_chunks
 from pathlib import Path  # ★追加
 from dotenv import load_dotenv  # ★追加
 from openai import OpenAI  # ★追加
+import argparse  # ファイル先頭に追加
 import os
 
-def rag_qa(url, question):
+def rag_qa(url, question,provider):
 
     # ★追加：APIキーを読み込む
     env_path = Path(__file__).resolve().parent.parent / ".env"
 
     load_dotenv(env_path)
-
-    provider = "gemini"
 
     if provider == "gemini":
         # ★追加：Gemini APIに接続する
@@ -39,7 +39,6 @@ def rag_qa(url, question):
 
     else:
         raise ValueError(f"未対応のAPIです: {provider}")
-
 
 
     print("OpenAIクライアントの生成成功")
@@ -68,8 +67,13 @@ def rag_qa(url, question):
     relevant_chunks = find_relevant_chunks(question, chunk_embeddings,client,embedding_model)
     print("質問に関連するチャンクを見つけました")
 
-    # 5. 回答を生成
-    answer = generate_answer(question, relevant_chunks,client,llm_model)
+    # プロンプトを作成
+    prompt = create_prompt(question, relevant_chunks)  # ★修正
+    print("プロンプトを生成しました")
+
+
+    # 回答を生成
+    answer = generate_answer(client, prompt, llm_model)  # ★修正
     print("回答を生成しました")
 
     return answer
@@ -77,9 +81,14 @@ def rag_qa(url, question):
 # ★追加：main.pyを直接実行したときだけ動作
 if __name__ == "__main__":
 
-    url = "https://example.com"
-    question = "このWebページについて教えてください"
+    parser = argparse.ArgumentParser()
 
-    answer = rag_qa(url, question)
+    parser.add_argument("--url", type=str, required=True)
+    parser.add_argument("--question", type=str, required=True)
+    parser.add_argument("--provider", type=str, required=True)
+
+    args = parser.parse_args()
+
+    answer = rag_qa(args.url, args.question, args.provider)
 
     print(answer)
