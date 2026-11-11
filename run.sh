@@ -1,5 +1,3 @@
-#!/bin/bash
-
 while true
 do
     echo "================================"
@@ -18,20 +16,28 @@ do
             read -p "データベースに追加したいURLを入力してください：" url
 
             echo ""
-
             echo "データベースを作成します..."
             python tools/ingest.py --url "$url"
             ;;
 
         2)
             echo ""
+            read -p "LLMに渡したい情報のURLを入力してください：" url
+
             read -p "質問文を入力してください：" question
+
+            read -p "利用したいLLM（gemini, openai）を入力してください：" provider
 
             echo ""
             echo "入力された質問：$question"
+            echo "回答に使用するLLM：$provider"
             echo "回答を生成しています..."
 
-            python tools/main.py --question "$question"
+            # ★修正：モジュールとして実行
+            python -m tools.main \
+                --url "$url" \
+                --question "$question" \
+                --provider "$provider"
             ;;
 
         3)
