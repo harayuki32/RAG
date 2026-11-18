@@ -1,3 +1,5 @@
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
 # def embed_text(client,text):
 #     """テキストをベクトル化する関数"""
 
@@ -8,12 +10,10 @@
 
 #     return response.data[0].embedding
 
-def embed_text(client, text,embedding_model):
-    """テキストをベクトル化する関数"""
-
-    response = client.embeddings.create(
-        model=embedding_model,  # ★修正
-        input=text
+# ★追加：LangChain用Embeddingモデルの生成
+def create_embedding_model(model_name):
+    embeddings = GoogleGenerativeAIEmbeddings(
+        model=model_name
     )
 
-    return response.data[0].embedding
+    return embeddings
