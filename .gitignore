@@ -7,3 +7,10 @@ __pycache__/
 
 # APIキーなどの機密情報
 .env
+
+# Chromaのデータベース
+/database/chroma_db/
+/database/chroma_test_db/
+
+# ローカルの動作確認用ファイル
+/tools/test.py

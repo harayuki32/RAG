@@ -3,7 +3,17 @@ def create_prompt(question, relevant_chunks):
 
     """関連チャンクをもとに回答を生成する関数"""
     # プロンプトの作成
-    context = "\n\n".join([chunk["text"] for chunk in relevant_chunks])
+    # context = "\n\n".join([chunk["text"] for chunk in relevant_chunks])
+
+    # ★修正：LangChainのDocument形式
+    context = "\n\n".join(
+        chunk.page_content for chunk in relevant_chunks
+    )
+
+        # ★追加：デバッグ用
+    # print("contextの内容:", repr(context))
+    # print("contextの文字数:", len(context))
+
     prompt = f"""以下は、Webページから抽出された情報です：
 
     {context}
