@@ -10,6 +10,7 @@ __pycache__/
 
 # Chromaのデータベース
 /database/chroma_db/
+/database/chroma_test_db/
 
 # ローカルの動作確認用ファイル
 /tools/test.py

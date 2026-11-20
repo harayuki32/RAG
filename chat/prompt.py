@@ -11,8 +11,8 @@ def create_prompt(question, relevant_chunks):
     )
 
         # ★追加：デバッグ用
-    print("contextの内容:", repr(context))
-    print("contextの文字数:", len(context))
+    # print("contextの内容:", repr(context))
+    # print("contextの文字数:", len(context))
 
     prompt = f"""以下は、Webページから抽出された情報です：
 

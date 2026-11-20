@@ -1,82 +1,97 @@
-from database.chunker import split_into_chunks
-from database.loader import get_webpage_text
-from database.embedding import embed_text
-from chat.prompt import create_prompt
-from chat.llm import generate_answer 
+from pathlib import Path
+from dotenv import load_dotenv
+import argparse
+
+# ★追加：LangChain版の処理
+from tools.ingest import ingest_url
+from database.embedding import create_embedding_model
+from database.vector_store import load_vector_store
 from database.retriever import find_relevant_chunks
-from pathlib import Path  # ★追加
-from dotenv import load_dotenv  # ★追加
-from openai import OpenAI  # ★追加
-import argparse  # ファイル先頭に追加
-import os
+from chat.prompt import create_prompt
+from chat.llm import generate_answer
+
 
 def rag_qa(url, question,provider):
 
     # ★追加：APIキーを読み込む
     env_path = Path(__file__).resolve().parent.parent / ".env"
-
     load_dotenv(env_path)
 
+    # ② 使用モデルを設定
     if provider == "gemini":
-        # ★追加：Gemini APIに接続する
-        client = OpenAI(
-            api_key=os.getenv("GEMINI_API_KEY"),
-            base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
-        )
-
         # ★追加：Geminiで使用するモデル
         embedding_model = "gemini-embedding-001"
         llm_model = "gemini-3.1-flash-lite"
 
     elif provider == "openai":
-        client = OpenAI(
-            api_key=os.getenv("OPENAI_API_KEY")
-        )
-
+        
         # ★追加：OpenAIで使用するモデル
         embedding_model = "text-embedding-3-small"
         llm_model = "gpt-4o-mini"
-
     else:
         raise ValueError(f"未対応のAPIです: {provider}")
 
 
-    print("OpenAIクライアントの生成成功")
+    # ③ DBの設定
+    db_name = "rag_documents"
+    db_path = str(
+        Path(__file__).resolve().parent.parent
+        /"database" /"chroma_db"
+    )
 
 
-    """RAGを使った質問応答システムのメイン関数"""
-    # 1. Webページからテキスト抽出
-    text = get_webpage_text(url)
-    print("Webページからテキストを抽出しました")
 
-    # 2. テキストをチャンクに分割
-    chunks = split_into_chunks(text)
-    print(f"テキストを{len(chunks)}個のチャンクに分割しました")
-
-    # 3. チャンクをベクトル化
-    chunk_embeddings = []
-    for chunk in chunks:
-        embedding = embed_text(client,chunk,embedding_model)
-        chunk_embeddings.append({
-            "text": chunk,
-            "embedding": embedding
-        })
-    print("チャンクをベクトル化しました")
-
-    # 4. 関連チャンクを見つける
-    relevant_chunks = find_relevant_chunks(question, chunk_embeddings,client,embedding_model)
-    print("質問に関連するチャンクを見つけました")
-
-    # プロンプトを作成
-    prompt = create_prompt(question, relevant_chunks)  # ★修正
-    print("プロンプトを生成しました")
+    # ⑤ Embeddingモデルを生成
+    embeddings = create_embedding_model(embedding_model)
 
 
-    # 回答を生成
-    answer = generate_answer(client, prompt, llm_model)  # ★修正
-    print("回答を生成しました")
+    # ⑥ 保存済みDBを読み込む
+    vector_store = load_vector_store(
+        embedding_model=embeddings,
+        db_name=db_name,
+        db_path= db_path
+    )
+
+    existing_data = vector_store.get(
+        where={"source": url},
+        limit=1,
+        include=[]
+    )
+
+    print("データベースを読み込みました")
+
+    if existing_data["ids"]:
+       print("登録済みURLのため、DB作成を省略します")
+    else:
+        # ★修正：未登録のURLだけベクトル化・保存
+        ingest_url(
+            url=url,
+            embedding_model=embedding_model,
+            db_name=db_name,
+            db_path=db_path
+        )
+        print("新しいURLをDBに保存しました")
+
+    # ⑦ 関連Documentを検索
+    relevant_chunks = find_relevant_chunks(
+        question=question,
+        vector_store=vector_store,
+        k=3
+    )
+
+    print("関連するチャンクを検索しました")
+
+    # ⑧ プロンプトを作成
+    prompt = create_prompt(question, relevant_chunks)
+
+    # ⑨ 回答を生成
+    answer = generate_answer(
+        prompt=prompt,
+        llm_model=llm_model
+    )
 
     return answer
+
 
 # ★追加：main.pyを直接実行したときだけ動作
 if __name__ == "__main__":
@@ -91,4 +106,4 @@ if __name__ == "__main__":
 
     answer = rag_qa(args.url, args.question, args.provider)
 
-    print(answer)
+    print("生成された回答:",answer)
